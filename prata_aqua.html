@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prata Aqua — Outstanding Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --gold: #4A9EF5;
+    --gold-light: #6DB8FF;
+    --gold-dim: #2B6CB0;
+    --ink: #070B14;
+    --ink2: #0C1220;
+    --ink3: #111827;
+    --surface: #0D1424;
+    --surface2: #121B2E;
+    --surface3: #182338;
+    --border: rgba(74,158,245,0.15);
+    --border2: rgba(74,158,245,0.28);
+    --text: #E2E8F0;
+    --text2: #94A3B8;
+    --text3: #64748B;
+    --red: #EF4444;
+    --red-bg: rgba(239,68,68,0.12);
+    --green: #22C55E;
+    --green-bg: rgba(34,197,94,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --accent-glow: rgba(74,158,245,0.25);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* BG texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.08) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(14,165,233,0.03) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,11,20,0.94);
+    backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(74,158,245,0.15), rgba(99,102,241,0.1));
+  }
+  .brand-icon svg { width: 18px; height: 18px; fill: var(--gold); }
+  .brand-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+  .brand-name span { color: var(--gold); }
+  .brand-tag {
+    font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;
+    margin-left: 4px; margin-top: 2px;
+  }
+  .header-date {
+    font-size: 12px; color: var(--text3); letter-spacing: 0.05em;
+  }
+
+  /* ── NAV TABS ── */
+  .nav {
+    display: flex; align-items: center; gap: 2px;
+    background: var(--surface2); border-bottom: 0.5px solid var(--border);
+    padding: 0 32px;
+  }
+  .nav-tab {
+    padding: 14px 22px;
+    font-size: 13px; font-weight: 400;
+    color: var(--text3);
+    cursor: pointer; border: none; background: none;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 500; }
+
+  /* ── LAYOUT ── */
+  .main { position: relative; z-index: 1; padding: 32px; max-width: 1300px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.35s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 20px 24px 16px;
+    border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 500;
+    color: var(--text); letter-spacing: 0.03em;
+  }
+  .card-body { padding: 24px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field label {
+    font-size: 11px; font-weight: 500;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .field input, .field select {
+    background: var(--surface3);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none; width: 100%;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+  }
+  .field input::placeholder { color: var(--text3); }
+
+  /* autocomplete */
+  .autocomplete-wrap { position: relative; }
+  .dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--surface3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    z-index: 200;
+    max-height: 220px; overflow-y: auto;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    display: none;
+  }
+  .dropdown.open { display: block; }
+  .drop-item {
+    padding: 10px 14px; cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  }
+  .drop-item:last-child { border-bottom: none; }
+  .drop-item:hover { background: rgba(74,158,245,0.1); }
+  .drop-item .di-name { font-size: 13px; color: var(--text); font-weight: 500; }
+  .drop-item .di-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* party info pill */
+  .party-pill {
+    background: linear-gradient(135deg, rgba(74,158,245,0.1), rgba(59,130,246,0.05));
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    display: none;
+    margin-bottom: 4px;
+  }
+  .party-pill.show { display: block; animation: fadeUp 0.2s ease; }
+  .pp-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px; font-weight: 500; color: var(--gold); margin-bottom: 8px;
+  }
+  .pp-row { display: flex; gap: 24px; }
+  .pp-stat { display: flex; flex-direction: column; gap: 2px; }
+  .pp-stat .lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+  .pp-stat .val { font-size: 14px; font-weight: 500; color: var(--text2); }
+  .pp-stat .val.danger { color: #e05c4a; }
+  .pp-stat .val.success { color: #4ec980; }
+
+  /* amount section */
+  .amount-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .amount-display {
+    background: var(--surface3);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .amount-display .lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .amount-display .val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 500; color: var(--gold);
+  }
+  .amount-display .val.danger { color: #e05c4a; }
+  .amount-display .val.success { color: #4ec980; }
+
+  /* divider */
+  .divider {
+    height: 0.5px; background: var(--border); margin: 20px 0;
+  }
+
+  /* buttons */
+  .btn-gold {
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-gold:active { transform: scale(0.98); }
+  .btn-ghost {
+    background: transparent;
+    border: 0.5px solid var(--border2);
+    color: var(--text2);
+    border-radius: var(--radius-sm);
+    padding: 11px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-ghost:hover { background: rgba(74,158,245,0.08); border-color: var(--gold-dim); }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface3);
+    border: 0.5px solid var(--gold);
+    border-radius: 100px;
+    padding: 10px 24px;
+    font-size: 13px; color: var(--gold);
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    z-index: 9999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── METRICS ── */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .metric {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    transition: border-color 0.2s;
+  }
+  .metric:hover { border-color: var(--border2); }
+  .metric .m-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .metric .m-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px; font-weight: 500; color: var(--text);
+  }
+  .metric .m-val.gold { color: var(--gold); }
+  .metric .m-val.danger { color: #e05c4a; }
+  .metric .m-val.success { color: #4ec980; }
+  .metric .m-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 0.5px solid var(--border2); }
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px; font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 0.5px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(74,158,245,0.06); }
+  tbody td {
+    padding: 14px 16px;
+    font-size: 13px; color: var(--text2);
+    vertical-align: top;
+  }
+  tbody td.party-td {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; font-weight: 500; color: var(--text);
+  }
+  tbody td.amt { font-variant-numeric: tabular-nums; color: var(--text); }
+  tbody td.danger { color: #e05c4a; font-weight: 500; }
+  tbody td.success { color: #4ec980; }
+
+  /* badge */
+  .badge {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 100px; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+  .badge.pending { background: rgba(239,68,68,0.15); color: #f87171; border: 0.5px solid rgba(239,68,68,0.3); }
+  .badge.cleared { background: rgba(34,197,94,0.12); color: #4ade80; border: 0.5px solid rgba(34,197,94,0.25); }
+
+  /* desc lines */
+  .desc-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .desc-line {
+    font-size: 11px; color: var(--text3); line-height: 1.5;
+  }
+  .desc-line .tag-o { color: var(--gold-dim); font-weight: 500; }
+  .desc-line .tag-p { color: #4ec980; font-weight: 500; }
+
+  /* search */
+  .search-bar {
+    background: var(--surface3);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text); padding: 9px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; outline: none; width: 220px;
+    transition: border-color 0.2s;
+  }
+  .search-bar:focus { border-color: var(--gold); }
+  .search-bar::placeholder { color: var(--text3); }
+
+  /* entry log table */
+  .log-section { margin-top: 28px; }
+
+  /* section heading */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 500; color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .empty {
+    text-align: center; padding: 48px 24px;
+    color: var(--text3); font-size: 13px;
+  }
+  .empty svg { width: 32px; height: 32px; fill: none; stroke: var(--text3); stroke-width: 1.5; margin: 0 auto 12px; display: block; }
+
+  /* gold line accent */
+  .gold-line {
+    width: 32px; height: 1.5px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    margin-bottom: 12px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── DELETE BUTTON ── */
+  .btn-delete {
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.2);
+    color: #f87171;
+    border-radius: 5px;
+    width: 24px; height: 24px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-delete:hover {
+    background: rgba(239,68,68,0.18);
+    border-color: rgba(239,68,68,0.5);
+  }
+  .btn-delete:active { transform: scale(0.9); }
+
+  /* ── PIN MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: modalFadeIn 0.25s ease;
+  }
+  .modal-overlay.open { display: flex; }
+  @keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 380px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,245,0.1);
+    animation: modalSlideUp 0.3s ease;
+    text-align: center;
+  }
+  @keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+    border: 1px solid rgba(239,68,68,0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .modal-icon svg { width: 24px; height: 24px; fill: #f87171; }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .modal-desc {
+    font-size: 13px;
+    color: var(--text3);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .pin-input-group {
+    display: flex; gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .pin-digit {
+    width: 48px; height: 56px;
+    background: var(--surface3);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px; font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+  .pin-digit::-webkit-inner-spin-button,
+  .pin-digit::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .pin-digit:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .pin-digit.error {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.2);
+    animation: shake 0.4s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .pin-error-msg {
+    font-size: 12px;
+    color: #f87171;
+    margin-bottom: 12px;
+    min-height: 18px;
+  }
+  .modal-actions {
+    display: flex; gap: 10px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 11px 20px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .btn-modal-cancel {
+    background: var(--surface3);
+    color: var(--text2);
+    border: 1px solid var(--border) !important;
+  }
+  .btn-modal-cancel:hover {
+    background: rgba(74,158,245,0.08);
+  }
+  .btn-modal-delete {
+    background: #EF4444;
+    color: white;
+  }
+  .btn-modal-delete:hover {
+    background: #DC2626;
+  }
+  .btn-modal-delete:active {
+    transform: scale(0.97);
+  }
+
+  /* ── RESPONSIVE ── */
+  /* Tablet */
+  @media (max-width: 900px) {
+    .metrics { grid-template-columns: repeat(2,1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .amount-row { grid-template-columns: 1fr 1fr; }
+    .main { padding: 20px 16px; }
+    header { padding: 0 16px; }
+    .nav { padding: 0 16px; }
+    #page-entry > div { grid-template-columns: 1fr !important; }
+    .section-head { flex-direction: column; gap: 12px; align-items: flex-start !important; }
+    .section-head > div:last-child { width: 100%; }
+    .search-bar { width: 100% !important; flex: 1; }
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    html { font-size: 13px; }
+    header { height: 56px; padding: 0 12px; }
+    .brand-name { font-size: 18px; }
+    .brand-tag { font-size: 9px; }
+    .brand-icon { width: 32px; height: 32px; }
+    .brand-icon svg { width: 15px; height: 15px; }
+    .header-date { font-size: 10px; }
+    .sync-status { font-size: 10px; }
+    .nav { padding: 0 8px; gap: 0; overflow-x: auto; }
+    .nav-tab { padding: 12px 14px; font-size: 12px; white-space: nowrap; }
+    .main { padding: 14px 10px; }
+    .metrics { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .metric { padding: 14px 14px; }
+    .metric .m-val { font-size: 22px; }
+    .card-header { padding: 14px 16px 12px; flex-wrap: wrap; gap: 8px; }
+    .card-body { padding: 16px; }
+    .card-title { font-size: 16px; }
+    .amount-row { grid-template-columns: 1fr !important; gap: 12px; }
+    .amount-display .val { font-size: 18px; }
+    .section-h2 { font-size: 17px; }
+    .section-head > div:last-child {
+      flex-direction: column !important;
+      width: 100%;
+    }
+    .btn-gold, .btn-ghost { padding: 10px 16px; font-size: 12px; }
+    .payment-method-options { flex-direction: column; }
+    .pm-card { padding: 12px 14px; }
+    .pm-icon { width: 32px; height: 32px; }
+    .pm-icon svg { width: 15px; height: 15px; }
+    thead th { padding: 10px 10px; font-size: 9px; }
+    tbody td { padding: 10px 10px; font-size: 12px; }
+    tbody td.party-td { font-size: 14px; }
+    .badge { font-size: 10px; padding: 2px 8px; }
+    .modal-box { padding: 24px 20px; }
+    .pin-digit { width: 42px; height: 48px; font-size: 20px; }
+    .toast { font-size: 12px; padding: 8px 18px; bottom: 20px; }
+    .pp-row { flex-wrap: wrap; gap: 14px; }
+  }
+
+  /* Small mobile */
+  @media (max-width: 380px) {
+    .metrics { grid-template-columns: 1fr; }
+    .brand { gap: 8px; }
+    .brand-name { font-size: 16px; }
+    .pin-digit { width: 38px; height: 44px; font-size: 18px; }
+    .pin-input-group { gap: 7px; }
+  }
+
+  /* ── PAYMENT METHOD SELECTOR ── */
+  .payment-method-wrap {
+    display: none;
+    margin-top: 14px;
+    animation: fadeUp 0.3s ease;
+  }
+  .payment-method-wrap.show { display: block; }
+  .payment-method-label {
+    font-size: 11px; font-weight: 500;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .payment-method-options {
+    display: flex; gap: 12px;
+  }
+  .pm-option {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+  }
+  .pm-option input[type="radio"] {
+    position: absolute; opacity: 0; width: 0; height: 0;
+  }
+  .pm-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: all 0.25s ease;
+  }
+  .pm-option input:checked + .pm-card {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, rgba(74,158,245,0.12), rgba(59,130,246,0.06));
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 16px rgba(74,158,245,0.1);
+  }
+  .pm-card:hover {
+    border-color: var(--border2);
+    background: rgba(74,158,245,0.06);
+  }
+  .pm-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pm-icon.online {
+    background: linear-gradient(135deg, #3B82F6, #6366F1);
+  }
+  .pm-icon.cash {
+    background: linear-gradient(135deg, #22C55E, #16A34A);
+  }
+  .pm-icon svg { width: 18px; height: 18px; fill: white; }
+  .pm-info { display: flex; flex-direction: column; gap: 2px; }
+  .pm-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .pm-desc { font-size: 11px; color: var(--text3); }
+  .pm-check {
+    position: absolute; top: 10px; right: 12px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .pm-option input:checked ~ .pm-check {
+    border-color: var(--gold);
+    background: var(--gold);
+  }
+  .pm-option input:checked ~ .pm-check::after {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: white;
+  }
+
+  /* ── SYNC STATUS INDICATOR ── */
+  .sync-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text3);
+    letter-spacing: 0.03em;
+  }
+  .sync-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text3);
+    transition: background 0.3s;
+  }
+  .sync-dot.connected { background: #22C55E; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+  .sync-dot.syncing { background: #F59E0B; animation: pulse 1s infinite; }
+  .sync-dot.error { background: #EF4444; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" style="fill:var(--gold)"><path d="M12 2C8 8 4 11 4 15a8 8 0 0016 0c0-4-4-7-8-13z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">Prata <span>Aqua</span></div>
+      <div class="brand-tag">Outstanding Portal</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="sync-status" id="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-text">Connecting…</span>
+    </div>
+    <div class="header-date" id="hdr-date"></div>
+  </div>
+</header>
+
+<div class="nav">
+  <button class="nav-tab active" onclick="showPage('entry',this)">&#x2295; New Entry</button>
+  <button class="nav-tab" onclick="showPage('dashboard',this)">&#x25A6; Dashboard</button>
+</div>
+
+<div class="main">
+
+  <!-- ══ ENTRY PAGE ══ -->
+  <div class="page active" id="page-entry">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+      <!-- LEFT: Entry Form -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="gold-line"></div>
+            <div class="card-title">Add Entry</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field">
+              <label>Date</label>
+              <input type="date" id="e-date"/>
+            </div>
+            <div class="field">
+              <label>Party Name</label>
+              <div class="autocomplete-wrap">
+                <input type="text" id="e-party" placeholder="Type party name…" autocomplete="off"
+                  oninput="onPartyType(this.value)"
+                  onfocus="onPartyType(this.value)"
+                  onblur="setTimeout(closeDD,160)"/>
+                <div class="dropdown" id="party-dd"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="party-pill" class="party-pill" style="margin-top:14px;">
+            <div class="pp-name" id="pp-name"></div>
+            <div class="pp-row">
+              <div class="pp-stat"><div class="lbl">Outstanding</div><div class="val" id="pp-out"></div></div>
+              <div class="pp-stat"><div class="lbl">Paid</div><div class="val success" id="pp-paid"></div></div>
+              <div class="pp-stat"><div class="lbl">Pending</div><div class="val danger" id="pp-pend"></div></div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="amount-row">
+            <div class="field">
+              <label>Outstanding Amount (₹)</label>
+              <input type="number" id="e-out" min="0" step="0.01" placeholder="0.00" oninput="calcNet()"/>
+            </div>
+            <div class="field">
+              <label>Paid Amount (₹)</label>
+              <input type="number" id="e-paid" min="0" step="0.01" placeholder="0.00" oninput="onPaidInput()"/>
+            </div>
+            <div class="amount-display">
+              <div class="lbl">Net Pending</div>
+              <div class="val danger" id="e-net">₹ 0.00</div>
+            </div>
+          </div>
+
+          <!-- Payment Method Selector -->
+          <div class="payment-method-wrap" id="pm-wrap">
+            <div class="payment-method-label">Payment Method</div>
+            <div class="payment-method-options">
+              <label class="pm-option">
+                <input type="radio" name="payMethod" value="online" id="pm-online"/>
+                <div class="pm-card">
+                  <div class="pm-icon online">
+                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM4 0h16v2H4zm0 22h16v2H4zM8 14h2v2H8zm0-4h2v2H8zm4 4h2v2h-2zm0-4h2v2h-2zm4 4h2v2h-2zm4-4h-2v2h2z"/></svg>
+                  </div>
+                  <div class="pm-info">
+                    <div class="pm-title">Online</div>
+                    <div class="pm-desc">UPI / Bank / Card</div>
+                  </div>
+                </div>
+                <div class="pm-check"></div>
+              </label>
+              <label class="pm-option">
+                <input type="radio" name="payMethod" value="cash" id="pm-cash"/>
+                <div class="pm-card">
+                  <div class="pm-icon cash">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L10 14v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                  </div>
+                  <div class="pm-info">
+                    <div class="pm-title">Cash</div>
+                    <div class="pm-desc">Physical payment</div>
+                  </div>
+                </div>
+                <div class="pm-check"></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn-ghost" onclick="clearForm()">Clear</button>
+            <button class="btn-gold" onclick="submitEntry()">Save Entry</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Recent Entries Log -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="gold-line"></div>
+            <div class="card-title">Recent Entries</div>
+          </div>
+          <button class="btn-ghost" style="font-size:12px;padding:8px 14px;" onclick="exportExcel()">
+            ↓ Export Excel
+          </button>
+        </div>
+        <div class="tbl-wrap" id="entry-log-wrap">
+          <div class="empty">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            No entries yet
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD PAGE ══ -->
+  <div class="page" id="page-dashboard">
+
+    <!-- Metrics -->
+    <div class="metrics" id="metrics-row"></div>
+
+    <!-- Party Ledger -->
+    <div class="section-head">
+      <div>
+        <div class="gold-line"></div>
+        <div class="section-h2">Party Ledger</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input class="search-bar" type="text" id="dash-search" placeholder="Search party…" oninput="renderDash()"/>
+        <button class="btn-gold" style="font-size:12px;padding:10px 18px;" onclick="exportExcel()">↓ Export Excel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tbl-wrap" id="dash-table-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PIN Modal -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+    </div>
+    <div class="modal-title">Delete Entry</div>
+    <div class="modal-desc" id="pin-modal-desc">Enter 4-digit PIN to confirm deletion</div>
+    <div class="pin-input-group" id="pin-group">
+      <input type="number" class="pin-digit" id="pin-1" maxlength="1" min="0" max="9" oninput="onPinDigit(this,1)" onkeydown="onPinKey(event,1)" inputmode="numeric"/>
+      <input type="number" class="pin-digit" id="pin-2" maxlength="1" min="0" max="9" oninput="onPinDigit(this,2)" onkeydown="onPinKey(event,2)" inputmode="numeric"/>
+      <input type="number" class="pin-digit" id="pin-3" maxlength="1" min="0" max="9" oninput="onPinDigit(this,3)" onkeydown="onPinKey(event,3)" inputmode="numeric"/>
+      <input type="number" class="pin-digit" id="pin-4" maxlength="1" min="0" max="9" oninput="onPinDigit(this,4)" onkeydown="onPinKey(event,4)" inputmode="numeric"/>
+    </div>
+    <div class="pin-error-msg" id="pin-error"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closePinModal()">Cancel</button>
+      <button class="btn-modal-delete" onclick="confirmPinDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  FIREBASE CONFIG & INITIALIZATION
+// ═══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBikcQ31fMDZ-btk1AUenai5OkQ701Jpj8",
+  authDomain: "outstanding-portal.firebaseapp.com",
+  projectId: "outstanding-portal",
+  storageBucket: "outstanding-portal.firebasestorage.app",
+  messagingSenderId: "214798529686",
+  appId: "1:214798529686:web:58b758f95d4de453d47eb7"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const entriesCollection = db.collection('entries');
+
+// ═══════════════════════════════════════════
+//  SYNC STATUS
+// ═══════════════════════════════════════════
+function setSyncStatus(status, text) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + status;
+  txt.textContent = text;
+}
+
+// ═══════════════════════════════════════════
+//  DATA LAYER  (localStorage + Firestore)
+// ═══════════════════════════════════════════
+let entries = JSON.parse(localStorage.getItem('pa_entries') || '[]');
+
+function saveLocal() { localStorage.setItem('pa_entries', JSON.stringify(entries)); }
+
+async function saveToFirestore(entry) {
+  try {
+    setSyncStatus('syncing', 'Syncing…');
+    await entriesCollection.doc(String(entry.id)).set(entry);
+    setSyncStatus('connected', 'Synced');
+  } catch (err) {
+    console.error('Firestore save error:', err);
+    setSyncStatus('error', 'Offline');
+  }
+}
+
+function save() {
+  saveLocal();
+}
+
+// Listen for real-time updates from Firestore
+function listenToFirestore() {
+  try {
+    entriesCollection.orderBy('ts', 'desc').onSnapshot(snapshot => {
+      setSyncStatus('connected', 'Live');
+      const firestoreEntries = [];
+      snapshot.forEach(doc => firestoreEntries.push(doc.data()));
+      if (firestoreEntries.length > 0) {
+        // Merge: keep Firestore as source of truth, add any local-only entries
+        const fsIds = new Set(firestoreEntries.map(e => e.id));
+        const localOnly = entries.filter(e => !fsIds.has(e.id));
+        entries = [...firestoreEntries, ...localOnly];
+        saveLocal();
+        renderEntryLog();
+        if (document.getElementById('page-dashboard').classList.contains('active')) {
+          renderDash();
+        }
+      }
+    }, err => {
+      console.warn('Firestore listen error:', err);
+      setSyncStatus('error', 'Offline');
+    });
+  } catch (err) {
+    console.warn('Firestore init error:', err);
+    setSyncStatus('error', 'Offline');
+  }
+}
+
+function buildPartyMap() {
+  const m = {};
+  entries.forEach(e => {
+    if (!m[e.party]) m[e.party] = { out: 0, paid: 0, log: [] };
+    m[e.party].out  += +e.out;
+    m[e.party].paid += +e.paid;
+    m[e.party].log.push(e);
+  });
+  return m;
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+const fmt = n => '₹' + (+n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtD = d => { if(!d) return ''; try { return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch{ return d; }};
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ═══════════════════════════════════════════
+//  HEADER DATE
+// ═══════════════════════════════════════════
+const today = new Date();
+document.getElementById('hdr-date').textContent =
+  today.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+document.getElementById('e-date').value = today.toISOString().split('T')[0];
+
+// ═══════════════════════════════════════════
+//  TAB NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'dashboard') renderDash();
+  if (id === 'entry') renderEntryLog();
+}
+
+// ═══════════════════════════════════════════
+//  AUTOCOMPLETE
+// ═══════════════════════════════════════════
+function onPartyType(val) {
+  const dd = document.getElementById('party-dd');
+  const map = buildPartyMap();
+  const q = val.trim().toLowerCase();
+  if (!q) { dd.classList.remove('open'); return; }
+  const matches = Object.keys(map).filter(k => k.toLowerCase().includes(q));
+  if (!matches.length) { dd.classList.remove('open'); updatePill(''); return; }
+  dd.innerHTML = matches.map(k => {
+    const pd = map[k], pend = pd.out - pd.paid;
+    return `<div class="drop-item" onmousedown="pickParty('${k.replace(/'/g,"\\'")}')">
+      <div class="di-name">${k}</div>
+      <div class="di-meta">Pending: ${fmt(pend)} &nbsp;·&nbsp; Outstanding: ${fmt(pd.out)}</div>
+    </div>`;
+  }).join('');
+  dd.classList.add('open');
+}
+function closeDD() { document.getElementById('party-dd').classList.remove('open'); }
+function pickParty(name) {
+  document.getElementById('e-party').value = name;
+  closeDD(); updatePill(name); calcNet();
+}
+function updatePill(name) {
+  const pill = document.getElementById('party-pill');
+  const map = buildPartyMap();
+  if (name && map[name]) {
+    const pd = map[name], pend = pd.out - pd.paid;
+    document.getElementById('pp-name').textContent = name;
+    document.getElementById('pp-out').textContent = fmt(pd.out);
+    document.getElementById('pp-paid').textContent = fmt(pd.paid);
+    document.getElementById('pp-pend').textContent = fmt(pend);
+    pill.classList.add('show');
+  } else {
+    pill.classList.remove('show');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  PAYMENT METHOD TOGGLE
+// ═══════════════════════════════════════════
+function onPaidInput() {
+  const paidVal = +document.getElementById('e-paid').value || 0;
+  const pmWrap = document.getElementById('pm-wrap');
+  if (paidVal > 0) {
+    pmWrap.classList.add('show');
+  } else {
+    pmWrap.classList.remove('show');
+    // Reset radio selection
+    const radios = document.querySelectorAll('input[name="payMethod"]');
+    radios.forEach(r => r.checked = false);
+  }
+  calcNet();
+}
+
+function getPaymentMethod() {
+  const selected = document.querySelector('input[name="payMethod"]:checked');
+  return selected ? selected.value : null;
+}
+
+// ═══════════════════════════════════════════
+//  CALCULATION
+// ═══════════════════════════════════════════
+function calcNet() {
+  const party = document.getElementById('e-party').value.trim();
+  const o = +document.getElementById('e-out').value || 0;
+  const p = +document.getElementById('e-paid').value || 0;
+  const map = buildPartyMap();
+  const base = map[party] ? (map[party].out - map[party].paid) : 0;
+  const net = base + o - p;
+  const el = document.getElementById('e-net');
+  el.textContent = fmt(net);
+  el.className = 'val ' + (net > 0 ? 'danger' : 'success');
+}
+
+// ═══════════════════════════════════════════
+//  SUBMIT
+// ═══════════════════════════════════════════
+function submitEntry() {
+  const date  = document.getElementById('e-date').value;
+  const party = document.getElementById('e-party').value.trim();
+  const out   = +document.getElementById('e-out').value || 0;
+  const paid  = +document.getElementById('e-paid').value || 0;
+  if (!date)  { toast('Please select a date.'); return; }
+  if (!party) { toast('Please enter party name.'); return; }
+  if (!out && !paid) { toast('Enter at least one amount.'); return; }
+
+  // Validate payment method when paid > 0
+  let payMethod = null;
+  if (paid > 0) {
+    payMethod = getPaymentMethod();
+    if (!payMethod) { toast('Please select a payment method.'); return; }
+  }
+
+  const entry = { id: Date.now(), date, party, out, paid, ts: new Date().toISOString() };
+  if (payMethod) entry.payMethod = payMethod;
+
+  entries.push(entry);
+  save();
+  saveToFirestore(entry);
+  renderEntryLog();
+  toast('Entry saved successfully.');
+  document.getElementById('e-out').value = '';
+  document.getElementById('e-paid').value = '';
+  document.getElementById('e-date').value = today.toISOString().split('T')[0];
+  document.getElementById('pm-wrap').classList.remove('show');
+  document.querySelectorAll('input[name="payMethod"]').forEach(r => r.checked = false);
+  updatePill(party); calcNet();
+}
+function clearForm() {
+  document.getElementById('e-date').value = today.toISOString().split('T')[0];
+  document.getElementById('e-party').value = '';
+  document.getElementById('e-out').value = '';
+  document.getElementById('e-paid').value = '';
+  document.getElementById('e-net').textContent = '₹ 0.00';
+  document.getElementById('party-pill').classList.remove('show');
+  document.getElementById('pm-wrap').classList.remove('show');
+  document.querySelectorAll('input[name="payMethod"]').forEach(r => r.checked = false);
+  closeDD();
+}
+
+// ═══════════════════════════════════════════
+//  ENTRY LOG TABLE
+// ═══════════════════════════════════════════
+function renderEntryLog() {
+  const wrap = document.getElementById('entry-log-wrap');
+  if (!entries.length) {
+    wrap.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      No entries yet</div>`; return;
+  }
+  const sorted = [...entries].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,50);
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Date</th><th>Party</th><th>Outstanding</th><th>Paid</th><th>Method</th><th>Entry Pending</th>
+    </tr></thead>
+    <tbody>
+    ${sorted.map(e => {
+      const ep = e.out - e.paid;
+      const methodBadge = e.payMethod 
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500;letter-spacing:0.03em;
+            ${e.payMethod === 'online' 
+              ? 'background:rgba(59,130,246,0.12);color:#60A5FA;border:0.5px solid rgba(59,130,246,0.3);' 
+              : 'background:rgba(34,197,94,0.12);color:#4ade80;border:0.5px solid rgba(34,197,94,0.3);'}">
+            ${e.payMethod === 'online' ? '⚡' : '💵'} ${e.payMethod.charAt(0).toUpperCase()+e.payMethod.slice(1)}</span>`
+        : '<span style="color:var(--text3);font-size:11px;">—</span>';
+      return `<tr>
+        <td style="color:var(--text3);font-size:12px;">${fmtD(e.date)}</td>
+        <td class="party-td">${e.party}</td>
+        <td class="amt">${fmt(e.out)}</td>
+        <td class="amt success">${fmt(e.paid)}</td>
+        <td>${methodBadge}</td>
+        <td><span class="badge ${ep>0?'pending':'cleared'}">${fmt(ep)}</span></td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function renderDash() {
+  const map = buildPartyMap();
+  const search = (document.getElementById('dash-search')?.value||'').toLowerCase();
+
+  let totOut=0, totPaid=0;
+  Object.values(map).forEach(p => { totOut+=p.out; totPaid+=p.paid; });
+  const totPend = totOut - totPaid;
+
+  document.getElementById('metrics-row').innerHTML = `
+    <div class="metric">
+      <div class="m-lbl">Parties</div>
+      <div class="m-val gold">${Object.keys(map).length}</div>
+      <div class="m-sub">Active accounts</div>
+    </div>
+    <div class="metric">
+      <div class="m-lbl">Total Outstanding</div>
+      <div class="m-val">${fmt(totOut)}</div>
+      <div class="m-sub">Cumulative billed</div>
+    </div>
+    <div class="metric">
+      <div class="m-lbl">Total Collected</div>
+      <div class="m-val success">${fmt(totPaid)}</div>
+      <div class="m-sub">Amount received</div>
+    </div>
+    <div class="metric">
+      <div class="m-lbl">Total Pending</div>
+      <div class="m-val danger">${fmt(totPend)}</div>
+      <div class="m-sub">Balance due</div>
+    </div>`;
+
+  const wrap = document.getElementById('dash-table-wrap');
+  const parties = Object.entries(map)
+    .filter(([n]) => n.toLowerCase().includes(search))
+    .sort((a,b) => (b[1].out-b[1].paid)-(a[1].out-a[1].paid));
+
+  if (!parties.length) {
+    wrap.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      No parties found</div>`; return;
+  }
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Party Name</th>
+      <th>Total Outstanding</th>
+      <th>Total Paid</th>
+      <th>Pending</th>
+      <th>Last Updated</th>
+      <th style="min-width:180px;">Activity Log</th>
+      <th style="width:40px;"></th>
+    </tr></thead>
+    <tbody>
+    ${parties.map(([name, pd]) => {
+      const pend = pd.out - pd.paid;
+      const last = pd.log[pd.log.length-1];
+      const lines = pd.log.slice().reverse().slice(0,5).map(h => {
+        let parts=[];
+        if(h.out>0) parts.push(`<span class="tag-o">+${fmt(h.out)} outstanding</span>`);
+        if(h.paid>0) parts.push(`<span class="tag-p">${fmt(h.paid)} paid${h.payMethod?' ('+h.payMethod+')':''}</span>`);
+        return `<div class="desc-line">${fmtD(h.date)} — ${parts.join(' · ')}</div>`;
+      }).join('');
+      // Create delete buttons for each entry in this party
+      const deleteButtons = pd.log.slice().reverse().slice(0,5).map(h => {
+        return `<button class="btn-delete" onclick="requestDeleteEntry(${h.id})" title="Delete: ${fmtD(h.date)} — ${fmt(h.out)}">✕</button>`;
+      }).join('');
+      return `<tr>
+        <td class="party-td">${name}</td>
+        <td class="amt">${fmt(pd.out)}</td>
+        <td class="amt success">${fmt(pd.paid)}</td>
+        <td class="amt ${pend>0?'danger':'success'}">
+          <span class="badge ${pend>0?'pending':'cleared'}">${fmt(pend)}</span>
+        </td>
+        <td style="color:var(--text3);font-size:12px;white-space:nowrap;">${fmtD(last?.date)}</td>
+        <td><div class="desc-wrap">${lines}</div></td>
+        <td><div style="display:flex;flex-wrap:wrap;gap:4px;">${deleteButtons}</div></td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT EXCEL
+// ═══════════════════════════════════════════
+function exportExcel() {
+  if (!entries.length) { toast('No data to export.'); return; }
+  const map = buildPartyMap();
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: All Entries
+  const e1 = [['Date','Party Name','Outstanding (₹)','Paid (₹)','Payment Method','Entry Pending (₹)','Timestamp']];
+  entries.slice().sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e => {
+    e1.push([fmtD(e.date), e.party, +e.out, +e.paid, e.payMethod||'N/A', e.out-e.paid, new Date(e.ts).toLocaleString('en-IN')]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(e1), 'All Entries');
+
+  // Sheet 2: Party Summary
+  const e2 = [['Party Name','Total Outstanding (₹)','Total Paid (₹)','Total Pending (₹)','Last Updated']];
+  Object.entries(map).sort((a,b)=>(b[1].out-b[1].paid)-(a[1].out-a[1].paid)).forEach(([name,pd]) => {
+    const last = pd.log[pd.log.length-1];
+    e2.push([name, pd.out, pd.paid, pd.out-pd.paid, fmtD(last?.date)]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(e2), 'Party Summary');
+
+  // Sheet 3: Activity Log
+  const e3 = [['Party Name','Date','Outstanding Added (₹)','Paid (₹)','Payment Method','Cumulative Pending After Entry (₹)']];
+  Object.entries(map).forEach(([name, pd]) => {
+    let running = 0;
+    pd.log.slice().sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(h => {
+      running += h.out - h.paid;
+      e3.push([name, fmtD(h.date), +h.out, +h.paid, h.payMethod||'N/A', running]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(e3), 'Activity Log');
+
+  XLSX.writeFile(wb, `PrataAqua_Outstanding_${today.toISOString().split('T')[0]}.xlsx`);
+  toast('Excel exported successfully.');
+}
+
+// ═══════════════════════════════════════════
+//  DELETE ENTRY WITH PIN PROTECTION
+// ═══════════════════════════════════════════
+const DELETE_PIN = '1163';
+let pendingDeleteId = null;
+
+function requestDeleteEntry(entryId) {
+  pendingDeleteId = entryId;
+  // Find entry details for display
+  const entry = entries.find(e => e.id === entryId);
+  const desc = entry ? `${entry.party} — ${fmtD(entry.date)} — ${fmt(entry.out)} / ${fmt(entry.paid)}` : 'this entry';
+  document.getElementById('pin-modal-desc').textContent = `Enter PIN to delete: ${desc}`;
+  document.getElementById('pin-error').textContent = '';
+  // Reset PIN inputs
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('pin-' + i);
+    el.value = '';
+    el.classList.remove('error');
+  }
+  document.getElementById('pin-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pin-1').focus(), 100);
+}
+
+function closePinModal() {
+  document.getElementById('pin-modal').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+function onPinDigit(el, idx) {
+  // Keep only last digit
+  if (el.value.length > 1) el.value = el.value.slice(-1);
+  if (el.value && idx < 4) {
+    document.getElementById('pin-' + (idx + 1)).focus();
+  }
+  // Auto-submit when all 4 filled
+  if (idx === 4 && el.value) {
+    confirmPinDelete();
+  }
+}
+
+function onPinKey(event, idx) {
+  if (event.key === 'Backspace' && !event.target.value && idx > 1) {
+    document.getElementById('pin-' + (idx - 1)).focus();
+  }
+  if (event.key === 'Enter') {
+    confirmPinDelete();
+  }
+  if (event.key === 'Escape') {
+    closePinModal();
+  }
+}
+
+async function confirmPinDelete() {
+  const pin = [1,2,3,4].map(i => document.getElementById('pin-' + i).value).join('');
+  if (pin.length < 4) {
+    document.getElementById('pin-error').textContent = 'Please enter all 4 digits.';
+    return;
+  }
+  if (pin !== DELETE_PIN) {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('pin-' + i);
+      el.classList.add('error');
+      el.value = '';
+    }
+    setTimeout(() => {
+      for (let i = 1; i <= 4; i++) document.getElementById('pin-' + i).classList.remove('error');
+      document.getElementById('pin-1').focus();
+    }, 500);
+    return;
+  }
+
+  // PIN correct — delete entry
+  if (pendingDeleteId !== null) {
+    // Remove from Firestore
+    try {
+      setSyncStatus('syncing', 'Deleting…');
+      await entriesCollection.doc(String(pendingDeleteId)).delete();
+      setSyncStatus('connected', 'Synced');
+    } catch (err) {
+      console.error('Firestore delete error:', err);
+      setSyncStatus('error', 'Offline');
+    }
+    // Remove from local
+    entries = entries.filter(e => e.id !== pendingDeleteId);
+    saveLocal();
+    renderEntryLog();
+    renderDash();
+    toast('Entry deleted successfully.');
+  }
+  closePinModal();
+}
+
+// Close modal on overlay click
+document.getElementById('pin-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePinModal();
+});
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+renderEntryLog();
+listenToFirestore();
+</script>
+</body>
+</html>
