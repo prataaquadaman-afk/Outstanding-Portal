@@ -10,6 +10,36 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   :root {
+    --gold: #1E88E5;
+    --gold-light: #42A5F5;
+    --gold-dim: #1565C0;
+    --ink: #F8FAFC;
+    --ink2: #FFFFFF;
+    --ink3: #F1F5F9;
+    --surface: #FFFFFF;
+    --surface2: #FFFFFF;
+    --surface3: #F1F5F9;
+    --border: rgba(30,136,229,0.12);
+    --border2: rgba(30,136,229,0.22);
+    --text: #0F172A;
+    --text2: #334155;
+    --text3: #64748B;
+    --red: #DC2626;
+    --red-bg: rgba(220,38,38,0.08);
+    --green: #16A34A;
+    --green-bg: rgba(22,163,74,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --accent-glow: rgba(30,136,229,0.15);
+    --header-bg: rgba(255, 255, 255, 0.85);
+    --shadow: 0 12px 40px rgba(15, 23, 42, 0.06);
+    --modal-shadow: 0 24px 80px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(30,136,229,0.08);
+    --bg-gradient: radial-gradient(ellipse at 20% 0%, rgba(30,136,229,0.05) 0%, transparent 55%),
+                   radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.04) 0%, transparent 50%),
+                   radial-gradient(ellipse at 50% 50%, rgba(14,165,233,0.02) 0%, transparent 70%);
+  }
+
+  [data-theme="dark"] {
     --gold: #4A9EF5;
     --gold-light: #6DB8FF;
     --gold-dim: #2B6CB0;
@@ -31,6 +61,12 @@
     --radius: 12px;
     --radius-sm: 8px;
     --accent-glow: rgba(74,158,245,0.25);
+    --header-bg: rgba(7, 11, 20, 0.94);
+    --shadow: 0 12px 40px rgba(0,0,0,0.5);
+    --modal-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,245,0.1);
+    --bg-gradient: radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.08) 0%, transparent 55%),
+                   radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.05) 0%, transparent 50%),
+                   radial-gradient(ellipse at 50% 50%, rgba(14,165,233,0.03) 0%, transparent 70%);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { font-size: 14px; }
@@ -45,16 +81,14 @@
   body::before {
     content: '';
     position: fixed; inset: 0;
-    background: radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.08) 0%, transparent 55%),
-                radial-gradient(ellipse at 80% 100%, rgba(99,102,241,0.05) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(14,165,233,0.03) 0%, transparent 70%);
+    background: var(--bg-gradient);
     pointer-events: none; z-index: 0;
   }
 
   /* ── HEADER ── */
   header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(7,11,20,0.94);
+    background: var(--header-bg);
     backdrop-filter: blur(20px);
     border-bottom: 0.5px solid var(--border);
     padding: 0 32px;
@@ -167,7 +201,7 @@
     border-radius: var(--radius-sm);
     z-index: 200;
     max-height: 220px; overflow-y: auto;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow);
     display: none;
   }
   .dropdown.open { display: block; }
@@ -422,7 +456,7 @@
     padding: 32px;
     width: 90%;
     max-width: 380px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,245,0.1);
+    box-shadow: var(--modal-shadow);
     animation: modalSlideUp 0.3s ease;
     text-align: center;
   }
@@ -682,6 +716,33 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }
+
+  /* ── THEME SWITCHER ── */
+  .theme-btn {
+    background: var(--surface3);
+    border: 0.5px solid var(--border2);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    font-size: 16px;
+  }
+  .theme-btn:hover {
+    background: var(--border);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+  }
+  .theme-btn:active {
+    transform: translateY(0);
+  }
+  .theme-icon-dark { display: none; }
+  .theme-icon-light { display: inline; }
+  
+  [data-theme="dark"] .theme-icon-dark { display: inline; }
+  [data-theme="dark"] .theme-icon-light { display: none; }
 </style>
 </head>
 <body>
@@ -702,6 +763,10 @@
       <span id="sync-text">Connecting…</span>
     </div>
     <div class="header-date" id="hdr-date"></div>
+    <button id="theme-toggle" class="theme-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+      <span class="theme-icon-light">☀️</span>
+      <span class="theme-icon-dark">🌙</span>
+    </button>
   </div>
 </header>
 
@@ -881,6 +946,28 @@
 </div>
 
 <script>
+// ═══════════════════════════════════════════
+//  THEME MANAGEMENT
+// ═══════════════════════════════════════════
+function initTheme() {
+  const savedTheme = localStorage.getItem('pa_theme') || 'light';
+  setTheme(savedTheme);
+}
+function setTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  localStorage.setItem('pa_theme', theme);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  setTheme(next);
+}
+initTheme();
+
 // ═══════════════════════════════════════════
 //  FIREBASE CONFIG & INITIALIZATION
 // ═══════════════════════════════════════════
@@ -1204,8 +1291,58 @@ function renderDash() {
       No parties found</div>`; return;
   }
 
+  let sumOutstanding = 0;
+  let sumPaid = 0;
+  parties.forEach(([_, pd]) => {
+    sumOutstanding += pd.out;
+    sumPaid += pd.paid;
+  });
+  const sumPending = sumOutstanding - sumPaid;
+
+  const tableRows = parties.map(([name, pd], idx) => {
+    const pend = pd.out - pd.paid;
+    const last = pd.log[pd.log.length-1];
+    const lines = pd.log.slice().reverse().slice(0,5).map(h => {
+      let parts=[];
+      if(h.out>0) parts.push(`<span class="tag-o">+${fmt(h.out)} outstanding</span>`);
+      if(h.paid>0) parts.push(`<span class="tag-p">${fmt(h.paid)} paid${h.payMethod?' ('+h.payMethod+')':''}</span>`);
+      return `<div class="desc-line">${fmtD(h.date)} — ${parts.join(' · ')}</div>`;
+    }).join('');
+    // Create delete buttons for each entry in this party
+    const deleteButtons = pd.log.slice().reverse().slice(0,5).map(h => {
+      return `<button class="btn-delete" onclick="requestDeleteEntry(${h.id})" title="Delete: ${fmtD(h.date)} — ${fmt(h.out)}">✕</button>`;
+    }).join('');
+    return `<tr>
+      <td style="color:var(--text3);font-weight:500;text-align:center;vertical-align:middle;">${idx + 1}</td>
+      <td class="party-td">${name}</td>
+      <td class="amt">${fmt(pd.out)}</td>
+      <td class="amt success">${fmt(pd.paid)}</td>
+      <td class="amt ${pend>0?'danger':'success'}">
+        <span class="badge ${pend>0?'pending':'cleared'}">${fmt(pend)}</span>
+      </td>
+      <td style="color:var(--text3);font-size:12px;white-space:nowrap;">${fmtD(last?.date)}</td>
+      <td><div class="desc-wrap">${lines}</div></td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:4px;">${deleteButtons}</div></td>
+    </tr>`;
+  }).join('');
+
+  const totalRow = `
+    <tr style="background: rgba(74,158,245,0.08); font-weight: bold; border-top: 1.5px solid var(--border2); border-bottom: 1.5px solid var(--border2);">
+      <td></td>
+      <td class="party-td" style="font-weight: bold; color: var(--text);">TOTAL</td>
+      <td class="amt" style="font-weight: bold; color: var(--text);">${fmt(sumOutstanding)}</td>
+      <td class="amt success" style="font-weight: bold;">${fmt(sumPaid)}</td>
+      <td class="amt ${sumPending > 0 ? 'danger' : 'success'}" style="font-weight: bold;">
+        <span class="badge ${sumPending > 0 ? 'pending' : 'cleared'}" style="font-weight: bold; border-width: 1px;">${fmt(sumPending)}</span>
+      </td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>`;
+
   wrap.innerHTML = `<table>
     <thead><tr>
+      <th style="width: 60px; text-align: center;">Sr. No.</th>
       <th>Party Name</th>
       <th>Total Outstanding</th>
       <th>Total Paid</th>
@@ -1215,31 +1352,8 @@ function renderDash() {
       <th style="width:40px;"></th>
     </tr></thead>
     <tbody>
-    ${parties.map(([name, pd]) => {
-      const pend = pd.out - pd.paid;
-      const last = pd.log[pd.log.length-1];
-      const lines = pd.log.slice().reverse().slice(0,5).map(h => {
-        let parts=[];
-        if(h.out>0) parts.push(`<span class="tag-o">+${fmt(h.out)} outstanding</span>`);
-        if(h.paid>0) parts.push(`<span class="tag-p">${fmt(h.paid)} paid${h.payMethod?' ('+h.payMethod+')':''}</span>`);
-        return `<div class="desc-line">${fmtD(h.date)} — ${parts.join(' · ')}</div>`;
-      }).join('');
-      // Create delete buttons for each entry in this party
-      const deleteButtons = pd.log.slice().reverse().slice(0,5).map(h => {
-        return `<button class="btn-delete" onclick="requestDeleteEntry(${h.id})" title="Delete: ${fmtD(h.date)} — ${fmt(h.out)}">✕</button>`;
-      }).join('');
-      return `<tr>
-        <td class="party-td">${name}</td>
-        <td class="amt">${fmt(pd.out)}</td>
-        <td class="amt success">${fmt(pd.paid)}</td>
-        <td class="amt ${pend>0?'danger':'success'}">
-          <span class="badge ${pend>0?'pending':'cleared'}">${fmt(pend)}</span>
-        </td>
-        <td style="color:var(--text3);font-size:12px;white-space:nowrap;">${fmtD(last?.date)}</td>
-        <td><div class="desc-wrap">${lines}</div></td>
-        <td><div style="display:flex;flex-wrap:wrap;gap:4px;">${deleteButtons}</div></td>
-      </tr>`;
-    }).join('')}
+      ${tableRows}
+      ${totalRow}
     </tbody>
   </table>`;
 }
